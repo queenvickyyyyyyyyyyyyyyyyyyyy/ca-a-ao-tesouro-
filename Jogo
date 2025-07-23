@@ -1,0 +1,113 @@
+public class Jogo {
+    private ElementoTabuleiro[][] tabuleiro;
+    private Jogador jogador;
+    private int tesourosRestantes;
+    private int movimentosRestantes;
+
+    public Jogo() {
+        tabuleiro = new ElementoTabuleiro[6][6];
+        jogador = new Jogador();
+        tesourosRestantes = 3;
+        movimentosResta
+// Classe Jogo
+public class Jogo {
+    private ElementoTabuleiro[][] tabuleiro;
+    private Jogador jogador;
+    private int tesourosRestantes;
+    private int movimentosRestantes;
+
+    public Jogo() {
+        tabuleiro = new ElementoTabuleiro[6][6];
+        jogador = new Jogador();
+        tesourosRestantes = 3;
+        movimentosRestantes = 10;
+        inicializarTabuleiro();
+    }
+
+    private void inicializarTabuleiro() {
+        Random rand = new Random();
+        
+        // Inicializa tudo como vazio
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 6; j++) {
+                tabuleiro[i][j] = new Vazio();
+            }
+        }
+        
+        // Coloca tesouros
+        for (int i = 0; i < 3; i++) {
+            int x, y;
+            do {
+                x = rand.nextInt(6);
+                y = rand.nextInt(6);
+            } while (!(tabuleiro[x][y] instanceof Vazio) || (x == 0 && y == 0));
+            tabuleiro[x][y] = new Tesouro();
+        }
+        
+        // Coloca armadilhas
+        for (int i = 0; i < 3; i++) {
+            int x, y;
+            do {
+                x = rand.nextInt(6);
+                y = rand.nextInt(6);
+            } while (!(tabuleiro[x][y] instanceof Vazio) || (x == 0 && y == 0));
+            tabuleiro[x][y] = new Armadilha();
+        }
+    }
+
+    public void jogar() {
+        Scanner scanner = new Scanner(System.in);
+        
+        while (movimentosRestantes > 0 && tesourosRestantes > 0) {
+            exibirTabuleiro();
+            System.out.println("Movimentos restantes: " + movimentosRestantes);
+            System.out.println("Tesouros restantes: " + tesourosRestantes);
+            System.out.println("Pontos: " + jogador.getPontos());
+            System.out.print("Movimento (W/A/S/D): ");
+            
+            char direcao = scanner.next().toUpperCase().charAt(0);
+            jogador.mover(direcao);
+            
+            int x = jogador.getX();
+            int y = jogador.getY();
+            
+            if (!jogador.jaVisitou(x, y)) {
+                int pontos = tabuleiro[x][y].interagir();
+                jogador.addPontos(pontos);
+                jogador.marcarVisitada(x, y);
+                
+                if (tabuleiro[x][y] instanceof Tesouro) {
+                    tesourosRestantes--;
+                }
+            }
+            
+            movimentosRestantes--;
+        }
+        
+        exibirResultadoFinal();
+        scanner.close();
+    }
+
+    private void exibirTabuleiro() {
+        System.out.println("\nTabuleiro:");
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 6; j++) {
+                if (jogador.jaVisitou(i, j)) {
+                    System.out.print(tabuleiro[i][j].simbolo() + " ");
+                } else if (i == jogador.getX() && j == jogador.getY()) {
+                    System.out.print("👤 ");
+                } else {
+                    System.out.print("❓ ");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    private void exibirResultadoFinal() {
+        System.out.println("\n=== FIM DE JOGO ===");
+        System.out.println("Pontuação final: " + jogador.getPontos());
+        System.out.println("Tesouros encontrados: " + (3 - tesourosRestantes));
+        exibirTabuleiro();
+    }
+}
