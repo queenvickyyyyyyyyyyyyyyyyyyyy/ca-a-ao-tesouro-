@@ -1,0 +1,29 @@
+public class Jogador {
+    private int x, y;
+    private int pontos;
+    private boolean[][] visitadas;
+
+    public Jogador() {
+        this.x = 0;
+        this.y = 0;
+        this.pontos = 0;
+        this.visitadas = new boolean[6][6];
+        visitadas[0][0] = true;
+    }
+
+    public void mover(char direcao) {
+        switch (direcao) {
+            case 'W': if (x > 0) x--; break;
+            case 'S': if (x < 5) x++; break;
+            case 'A': if (y > 0) y--; break;
+            case 'D': if (y < 5) y++; break;
+        }
+    }
+
+    public int getX() { return x; }
+    public int getY() { return y; }
+    public void addPontos(int pontos) { this.pontos += pontos; }
+    public int getPontos() { return pontos; }
+    public boolean jaVisitou(int x, int y) { return visitadas[x][y]; }
+    public void marcarVisitada(int x, int y) { visitadas[x][y] = true; }
+}
