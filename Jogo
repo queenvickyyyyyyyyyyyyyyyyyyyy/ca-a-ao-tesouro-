@@ -1,14 +1,26 @@
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Scanner;
+import java.util.Set;
+
+// Classe que orquestra a lógica do jogo
 public class Jogo {
     private ElementoTabuleiro[][] tabuleiro;
     private Jogador jogador;
     private int tesourosRestantes;
     private int movimentosRestantes;
+    // Usa um Set para armazenar as posições já visitadas, o que é mais eficiente
+    // para buscas do que verificar uma matriz separada.
+    private Set<Posicao> posicoesVisitadas;
 
     public Jogo() {
         tabuleiro = new ElementoTabuleiro[6][6];
         jogador = new Jogador();
         tesourosRestantes = 3;
         movimentosRestantes = 10;
+        posicoesVisitadas = new HashSet<>();
         inicializarTabuleiro();
     }
 
@@ -46,6 +58,9 @@ public class Jogo {
     public void jogar() {
         Scanner scanner = new Scanner(System.in);
         
+        // Adiciona a posição inicial do jogador como visitada
+        posicoesVisitadas.add(new Posicao(jogador.getX(), jogador.getY()));
+
         while (movimentosRestantes > 0 && tesourosRestantes > 0) {
             exibirTabuleiro();
             System.out.println("Movimentos restantes: " + movimentosRestantes);
@@ -54,19 +69,50 @@ public class Jogo {
             System.out.print("Movimento (W/A/S/D): ");
             
             char direcao = scanner.next().toUpperCase().charAt(0);
+            
+            // Salva a posição anterior antes de mover
+            int xAnterior = jogador.getX();
+            int yAnterior = jogador.getY();
+            
             jogador.mover(direcao);
             
             int x = jogador.getX();
             int y = jogador.getY();
             
-            if (!jogador.jaVisitou(x, y)) {
-                int pontos = tabuleiro[x][y].interagir();
-                jogador.addPontos(pontos);
-                jogador.marcarVisitada(x, y);
+            // Cria um objeto Posicao para a nova coordenada
+            Posicao novaPosicao = new Posicao(x, y);
+
+            // Usa a coleção de posições visitadas para verificar se a posição é nova
+            if (!posicoesVisitadas.contains(novaPosicao)) {
+                // **Polimorfismo:** A interação agora é mais clara e o tipo específico do elemento
+                // é gerenciado de forma polimórfica.
+                ElementoTabuleiro elemento = tabuleiro[x][y];
                 
-                if (tabuleiro[x][y] instanceof Tesouro) {
+                // Usa um Map para gerenciar as interações de forma dinâmica
+                Map<Class<? extends ElementoTabuleiro>, Runnable> interacoes = new HashMap<>();
+                
+                // Adiciona a lógica de interação para cada tipo de elemento
+                // A chave do Map é a classe do objeto (ex: Tesouro.class)
+                // O valor é um objeto Runnable que contém a ação a ser executada
+                interacoes.put(Tesouro.class, () -> {
+                    jogador.addPontos(elemento.interagir());
                     tesourosRestantes--;
+                });
+                interacoes.put(Armadilha.class, () -> {
+                    jogador.addPontos(elemento.interagir());
+                });
+                interacoes.put(Vazio.class, () -> {
+                    jogador.addPontos(elemento.interagir());
+                });
+
+                // Executa a ação correspondente ao tipo de elemento na posição atual
+                Runnable acao = interacoes.get(elemento.getClass());
+                if (acao != null) {
+                    acao.run();
                 }
+
+                // Adiciona a nova posição ao conjunto de posições visitadas
+                posicoesVisitadas.add(novaPosicao);
             }
             
             movimentosRestantes--;
@@ -80,7 +126,9 @@ public class Jogo {
         System.out.println("\nTabuleiro:");
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < 6; j++) {
-                if (jogador.jaVisitou(i, j)) {
+                Posicao posicaoAtual = new Posicao(i, j);
+                if (posicoesVisitadas.contains(posicaoAtual)) {
+                    // **Polimorfismo:** Chama o método simbolo() do tipo de objeto real
                     System.out.print(tabuleiro[i][j].simbolo() + " ");
                 } else if (i == jogador.getX() && j == jogador.getY()) {
                     System.out.print("👤 ");
@@ -97,5 +145,30 @@ public class Jogo {
         System.out.println("Pontuação final: " + jogador.getPontos());
         System.out.println("Tesouros encontrados: " + (3 - tesourosRestantes));
         exibirTabuleiro();
+    }
+}
+
+// Classe auxiliar para representar uma posição (coordenada x, y)
+// É necessário sobrescrever equals() e hashCode() para que o Set funcione corretamente
+class Posicao {
+    private final int x;
+    private final int y;
+
+    public Posicao(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Posicao posicao = (Posicao) o;
+        return x == posicao.x && y == posicao.y;
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * x + y;
     }
 }
